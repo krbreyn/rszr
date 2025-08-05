@@ -13,9 +13,7 @@ import (
 )
 
 func main() {
-	flag.Usage = func() {
-		fmt.Println("Usage of rszr:")
-	}
+	flag.Usage = usage
 
 	widthPtr := flag.Int("w", 0, "maximum width")
 	heightPtr := flag.Int("h", 0, "maximum height")
@@ -46,7 +44,6 @@ func main() {
 			fmt.Println(err)
 			continue
 		}
-		// fmt.Printf("%s is %d kb big\n", stat.Name(), stat.Size()/1024)
 
 		img, err := lib.OpenImage(p)
 		if err != nil {
@@ -103,6 +100,7 @@ func main() {
 		}
 	}
 
+	fmt.Println("All done!")
 }
 
 func handleFilesize(img image.Image, size int, kbPtr *int, ext string) (image.Image, error) {
@@ -131,6 +129,19 @@ func handleFilesize(img image.Image, size int, kbPtr *int, ext string) (image.Im
 	}
 
 	return img, nil
+}
+
+func usage() {
+	fmt.Println("Usage of rszr:")
+	fmt.Println("rszr [-w, -h, -kb, -w int] [image paths ...]")
+	fmt.Println("-% int")
+	fmt.Println("\tpercentage to reduce dimensions by")
+	fmt.Println("-w int")
+	fmt.Println("\tmaximum width")
+	fmt.Println("-h int")
+	fmt.Println("\tmaximum height")
+	fmt.Println("-kb int")
+	fmt.Println("\tmaximum file size, in kb")
 }
 
 func handleSize(img image.Image, widthPtr *int, heightPtr *int) image.Image {
