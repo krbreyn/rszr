@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"os"
+	"path"
 
 	"image/jpeg"
 	_ "image/jpeg"
@@ -16,25 +17,47 @@ import (
 	"golang.org/x/image/draw"
 )
 
-func GetImageSizeInBytes(img image.Image, format string) (int, error) {
+func EncodeImage(img image.Image, format string) (bytes.Buffer, error) {
 	var buf bytes.Buffer
 
 	switch format {
 	case ".jpeg", ".jpg":
 		err := jpeg.Encode(&buf, img, nil)
 		if err != nil {
-			return 0, err
+			return buf, err
 		}
 	case ".png":
 		err := png.Encode(&buf, img)
 		if err != nil {
-			return 0, err
+			return buf, err
 		}
 	default:
-		return 0, fmt.Errorf("unsupported format: %s", format)
+		return buf, fmt.Errorf("unsupported format: %s", format)
+	}
+
+	return buf, nil
+}
+
+func GetImageSizeInBytes(img image.Image, format string) (int, error) {
+	buf, err := EncodeImage(img, format)
+	if err != nil {
+		return 0, err
 	}
 
 	return buf.Len(), nil
+}
+
+func SaveImage(img image.Image, filename string) error {
+	buf, err := EncodeImage(img, path.Ext(filename))
+	if err != nil {
+		return err
+	}
+	dst := path.Join(".", filename)
+	err = os.WriteFile(dst, buf.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func OpenImage(path string) (image.Image, error) {

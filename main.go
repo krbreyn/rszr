@@ -95,6 +95,7 @@ func main() {
 
 		new_name := strings.TrimSuffix(stat.Name(), ext) + "_" + new_name_suffix + ext
 		fmt.Println(new_name)
+		lib.SaveImage(img, new_name)
 	}
 
 }
