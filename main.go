@@ -85,33 +85,68 @@ func main() {
 				continue
 			}
 
-			if size <= *kbPtr*1024 {
-				fmt.Printf("size %d fits under %d\n", size, *kbPtr*1024)
-			} else {
-				fmt.Printf("size %d over %d\n", size, *kbPtr*1024)
+			if size > *kbPtr*1024 {
+				img, err = handleFilesize(img, size, kbPtr, ext)
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
 			}
-			fmt.Println("TODO")
 		}
 
 		new_name := strings.TrimSuffix(stat.Name(), ext) + "_" + new_name_suffix + ext
-		fmt.Println(new_name)
-		lib.SaveImage(img, new_name)
+		err = lib.SaveImage(img, new_name)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Printf("saved %s as %s\n", stat.Name(), new_name)
+		}
 	}
 
 }
 
+func handleFilesize(img image.Image, size int, kbPtr *int, ext string) (image.Image, error) {
+	factor := float64(*kbPtr*1024) / float64(size)
+	bounds := img.Bounds()
+	newWidth := int(float64(bounds.Dx()) * factor)
+	newHeight := int(float64(bounds.Dy()) * factor)
+	img = lib.ResizeImageNearest(img, newWidth, newHeight)
+	size, err := lib.GetImageSizeInBytes(img, ext)
+	if err != nil {
+		return img, err
+	}
+	if size > *kbPtr*1024 {
+		for {
+			newWidth -= 10
+			newHeight -= 10
+			img = lib.ResizeImageNearest(img, newWidth, newHeight)
+			size, err := lib.GetImageSizeInBytes(img, ext)
+			if err != nil {
+				return img, err
+			}
+			if size <= *kbPtr*1024 {
+				break
+			}
+		}
+	}
+
+	return img, nil
+}
+
 func handleSize(img image.Image, widthPtr *int, heightPtr *int) image.Image {
 	bounds := img.Bounds()
+	newWidth := *widthPtr
+	newHeight := *heightPtr
 	if *widthPtr == 0 {
-		*widthPtr = bounds.Dx()
+		newWidth = bounds.Dx()
 	}
 	if *heightPtr == 0 {
-		*heightPtr = bounds.Dy()
+		newHeight = bounds.Dy()
 	}
-	if bounds.Dx() <= *widthPtr && bounds.Dy() <= *heightPtr {
+	if bounds.Dx() <= newWidth && bounds.Dy() <= newHeight {
 		return img
 	}
-	img = lib.ResizeImageNearest(img, *widthPtr, *heightPtr)
+	img = lib.ResizeImageNearest(img, newWidth, newHeight)
 	return img
 }
 
